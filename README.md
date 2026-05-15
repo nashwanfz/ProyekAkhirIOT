@@ -83,6 +83,8 @@ Sistem ini dapat membantu pengguna dalam memantau kondisi tanah sehingga lebih m
 
 Board schematic dirancang menggunakan:
 - Wokwi
+- ![Schematic](assets/schematic.jpeg)
+
 
 ## 📍 Koneksi Komponen
 
@@ -117,4 +119,17 @@ Board schematic dirancang menggunakan:
    - DallasTemperature
    - LiquidCrystal_I2C
 4. Jalankan alat  
-5. Data sensor akan tampil pada LCD  
+5. Data sensor akan tampil pada LCD
+
+---
+
+# 📷 Dokumentasi
+1. Tampilan Telegram
+   ![Schematic](assets/TampilanTelegram.jpeg)
+2. Tampilan Sensor Soil Di LCD
+   ![Schematic](assets/LCDSuhu.jpeg)
+3. Tampilan Sensor Suhu Di LCD
+   ![Schematic](assets/LCDSoil.jpeg)
+
+
+
