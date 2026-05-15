@@ -118,9 +118,3 @@ Board schematic dirancang menggunakan:
    - LiquidCrystal_I2C
 4. Jalankan alat  
 5. Data sensor akan tampil pada LCD  
-
----
-
-# 📷 Dokumentasi
-
-Tambahkan foto alat, schematic, dan hasil pengujian pada bagian ini.
