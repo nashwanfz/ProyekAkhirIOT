@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
+#include <PubSubClient.h>
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -9,15 +10,21 @@
 #include <DallasTemperature.h>
 
 // ================= WIFI =================
-const char* ssid = "Praktikum";
-const char* password = "12344321";
+const char* ssid = "A35";
+const char* password = "monyetlu";
 
 // ================= TELEGRAM =================
-#define BOT_TOKEN "8248040487:AAFJDwIzBooS7ipL42Y5yWQZOoMqUJkhI8M"
-#define CHAT_ID "5114277048"
+#define BOT_TOKEN "8603321188:AAEWG3oPfX3YRMI471weiybLoe-BAOq0-hw"
+#define CHAT_ID "1262953121"
 
 WiFiClientSecure client;
 UniversalTelegramBot bot(BOT_TOKEN, client);
+
+// ================= MQTT =================
+const char* mqtt_server = "broker.emqx.io";
+
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
 
 // ================= SOIL SENSOR =================
 #define SOIL_SENSOR 33
@@ -145,10 +152,104 @@ void bacaTemperature() {
     tempStatus = "MASIH DAPAT DITOLERANSI";
   }
 }
+
+// ================= MQTT CALLBACK =================
+void callback(char* topic, byte* payload, unsigned int length) {
+
+  String message = "";
+
+  for (int i = 0; i < length; i++) {
+
+    message += (char)payload[i];
+  }
+
+  Serial.println("MQTT Topic : " + String(topic));
+  Serial.println("MQTT Message : " + message);
+
+  // ================= REQUEST =================
+  if (String(topic) == "wan/iot/request") {
+
+    // ================= SUHU =================
+    if (message == "Suhu") {
+
+      bacaTemperature();
+
+      String data =
+        "Suhu : " + String(temperature) +
+        " C | " + tempStatus;
+
+      mqttClient.publish(
+        "wan/iot/Suhu",
+        data.c_str()
+      );
+
+      updateLCD(
+        "Temp:" + String(temperature) + "C",
+        tempStatus
+      );
+    }
+
+    // ================= KELEMBAPAN =================
+    else if (message == "Kelembapan") {
+
+      bacaSoil();
+
+      String data =
+        "Nilai : " + String(soilValue) +
+        " | " + soilStatus;
+
+      mqttClient.publish(
+        "wan/iot/Kelembapan",
+        data.c_str()
+      );
+
+      updateLCD(
+        "Soil:" + soilStatus,
+        String(soilValue)
+      );
+    }
+  }
+}
+
+// ================= MQTT RECONNECT =================
+unsigned long lastReconnect = 0;
+
+void reconnectMQTT() {
+
+  if (millis() - lastReconnect > 3000) {
+
+    lastReconnect = millis();
+
+    Serial.println("Menghubungkan MQTT...");
+
+    String clientId = "wan-" + String(random(1000, 9999));
+
+    if (mqttClient.connect(clientId.c_str())) {
+
+      Serial.println("MQTT Connected");
+
+      mqttClient.subscribe("wan/iot/#");
+
+      mqttClient.publish(
+        "wan/iot/koneksi",
+        "ESP32 Connected"
+      );
+
+      updateLCD("MQTT Connected", "");
+
+    } else {
+
+      Serial.print("Gagal MQTT : ");
+      Serial.println(mqttClient.state());
+    }
+  }
+}
+
 // ================= SETUP =================
 void setup() {
 
   Serial.begin(115200);
+  randomSeed(micros());
 
   pinMode(SOIL_SENSOR, INPUT);
 
@@ -202,6 +303,10 @@ void setup() {
 
     updateLCD("Bot Gagal", "Terkoneksi");
   }
+
+  // ================= MQTT =================
+  mqttClient.setServer(mqtt_server, 1883);
+  mqttClient.setCallback(callback);
 
   delay(2000);
 
@@ -296,6 +401,15 @@ void handleNewMessages(int numNewMessages) {
 // ================= LOOP =================
 void loop() {
 
+  // ================= MQTT =================
+  if (!mqttClient.connected()) {
+
+    reconnectMQTT();
+  }
+
+  mqttClient.loop();
+
+  // ================= TELEGRAM =================
   int numNewMessages =
     bot.getUpdates(bot.last_message_received + 1);
 
