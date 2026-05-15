@@ -83,7 +83,7 @@ Sistem ini dapat membantu pengguna dalam memantau kondisi tanah sehingga lebih m
 
 Board schematic dirancang menggunakan:
 - Wokwi
-- ![Schematic](assets/schematic.jpeg)
+- ![Schematic](Assets/schematic.jpeg)
 
 
 ## 📍 Koneksi Komponen
